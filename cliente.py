@@ -1,15 +1,15 @@
 import socket
 import threading
 
-def receive_messages(client_socket):
-    """Función que corre en un hilo separado solo para recibir datos."""
+# Función que corre en un hilo separado solo para recibir datos.
+def recibir_mensajes(cliente_socket):
     while True:
         try:
             # Recibir mensaje del servidor
-            message = client_socket.recv(1024).decode("utf-8")
-            if message:
-                print(f"\n[Mensaje recibido]: {message}")
-                print("Enter message: ", end="") # Para que no se pierda el prompt del input
+            mensaje = cliente_socket.recv(1024).decode("utf-8")
+            if mensaje:
+                print(f"\n[Mensaje recibido]: {mensaje}")
+                print("Enter mensaje: ", end="") # Para que no se pierda el prompt del input
             else:
                 # Si el servidor cierra la conexión
                 break
@@ -18,32 +18,31 @@ def receive_messages(client_socket):
             break
 
 def run_client():
-    client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    cliente = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_ip = "127.0.0.1"
     server_port = 8000
-    
+    nombre_del_cliente = input("ingresa tu nombre: ")
     try:
-        client.connect((server_ip, server_port))
+        cliente.connect((server_ip, server_port))
         print("Conectado al servidor.")
 
-        # --- AQUÍ ESTÁ EL CAMBIO CLAVE ---
         # Creamos un hilo para recibir mensajes mientras nosotros escribimos
-        receive_thread = threading.Thread(target=receive_messages, args=(client,))
+        receive_thread = threading.Thread(target=recibir_mensajes, args=(cliente,))
         receive_thread.daemon = True # Esto hace que el hilo muera si cerramos el programa
         receive_thread.start()
 
         while True:
-            msg = input("Enter message: ")
+            msg = input("Escriba su mensaje: ")
             if msg.lower() == "close":
-                client.send("close".encode("utf-8"))
+                cliente.send("close".encode("utf-8"))
                 break
             
-            client.send(msg.encode("utf-8"))
+            cliente.send(f"{nombre_del_cliente}: {msg}".encode("utf-8"))
             
     except Exception as e:
         print(f"Error: {e}")
     finally:
-        client.close()
+        cliente.close()
         print("Conexión cerrada.")
 
 if __name__ == "__main__":
