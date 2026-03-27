@@ -4,13 +4,14 @@ import threading
 #  Creamos una lista para almacenar los sockets de todos los conectados
 clientes = []
 
-def broadcast(message, actual_cliente_socket):
-    # Envía el mensaje a todos los clientes, excepto al que lo envió.
+# Envía el mensaje a todos los clientes, excepto al que lo envió.
+def broadcast(mensaje, actual_cliente_socket):
+
     for cliente in clientes:
         if cliente != actual_cliente_socket:
             try:
                 # El mensaje ya viene en bytes desde el manejo_de_clientes
-                cliente.send(message)
+                cliente.send(mensaje)
             except:
                 # Si hay error (cliente desconectado), lo removemos
                 if cliente in clientes:
@@ -24,18 +25,20 @@ def manejo_de_clientes(cliente_socket, addr):
         while True:
             # Recibimos los datos (en bytes)
             data = cliente_socket.recv(1024)
+            # si no se reciben datos se cierra el socket con el cliente
             if not data:
                 break
-                
-            request = data.decode("utf-8")
+            # Decodificamos el mensaje    
+            mensaje_recibido = data.decode("utf-8")
             
-            if request.lower() == "close":
+            # Si el mensaje es close, se cierra el bucle
+            if mensaje_recibido.lower() == "close":
                 cliente_socket.send("closed".encode("utf-8"))
                 break
             
-            print(f"Mensaje de {addr}: {request}")
+            print(f"Mensaje de {addr}: {mensaje_recibido}")
             
-            # En lugar de responder "accepted", difundimos el mensaje original a todos
+            # Mandamos el mensaje original a todos
             broadcast(data, cliente_socket)
             
     except Exception as error:
@@ -48,7 +51,7 @@ def manejo_de_clientes(cliente_socket, addr):
         print(f"Conexión con {addr} cerrada y removida de la lista")
 
 
-# Se crea el servidor 
+# Creamos el servidor 
 def run_server():
     server_ip = "127.0.0.1"
     port = 8000
@@ -68,7 +71,7 @@ def run_server():
             
             thread = threading.Thread(target=manejo_de_clientes, args=(cliente_socket, addr,))
             thread.start()
-            # Opcional: ver cuántos usuarios hay activos
+            # Ver cuántos usuarios hay activos
             print(f"Usuarios activos: {len(clientes)}")
             
     except Exception as error:
